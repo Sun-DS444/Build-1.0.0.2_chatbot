@@ -64,6 +64,11 @@ if send and query:
     st.subheader("Answer")
     st.write(answer)
 
+with st.expander("🔍 Debug Logs"):
+    for l in st.session_state.get("logs", []):
+        st.text(l)
+
+
 
 
 
