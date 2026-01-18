@@ -8,3 +8,11 @@ rank-bm25
 nltk
 python-docx
 requests
+streamlit
+sentence-transformers
+torch
+numpy
+pandas
+qdrant-client
+requests
+python-docx
