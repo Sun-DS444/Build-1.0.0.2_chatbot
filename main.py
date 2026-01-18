@@ -14,13 +14,7 @@ from ui_portal import (
     chat_input,
     show_searching_overlay
 )
-from llm_client import ensure_ollama_running
 
-# 🔥 start AI engine once when app loads
-if "ollama_ready" not in st.session_state:
-    with st.spinner("Starting AI engine..."):
-        ensure_ollama_running()
-        st.session_state.ollama_ready = True
 
 # ---------------- PAGE CONFIG(Like Tab name,default page slide bar etc) ---------------------
 st.set_page_config(page_title="OpenJiraBot", page_icon="⚡", layout="wide")
@@ -60,9 +54,7 @@ if send and query:
         show_searching_overlay()
 
     # 1️⃣ Search Jira knowledge (RAG retrieval)
-    conn = get_connection()
-    results = hybrid_search(query, model, conn)
-    conn.close()
+    results = hybrid_search(query, model)
 
     # 2️⃣ Build clean context (background only)
     context = build_context(results)
@@ -76,4 +68,5 @@ if send and query:
     # 4️⃣ Show final answer (ChatGPT-style)
     st.subheader("Answer")
     st.write(answer)
+
 
