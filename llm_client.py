@@ -1,80 +1,71 @@
 # llm_client.py
 import requests
-import subprocess
-import time
-
-# Ollama API URL
-OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_TAGS_URL = "http://localhost:11434/api/tags"
+import streamlit as st
 
 
-def ensure_ollama_running():
-    try:
-        requests.get(OLLAMA_TAGS_URL, timeout=2)
-    except Exception:
-        subprocess.Popen(["ollama", "serve"], shell=True)
-        time.sleep(5)
-
-    # 🔥 Warm-up call (loads model)
-    try:
-        requests.post(
-            OLLAMA_URL,
-            json={
-                "model": "smollm2:360m",
-                "prompt": "Hello",
-                "stream": False
-            },
-            timeout=60
-        )
-    except Exception:
-        pass
-
-
-# Main LLM call used by the chatbot
 def call_llm(context: str, question: str) -> str:
+    """
+    Calls Hugging Face Inference API to generate an answer.
+    Requires secrets:
+    - HF_API_KEY
+    - HF_MODEL
+    """
+
     try:
-        # Ensure Ollama is up before calling
-        ensure_ollama_running()
+        url = f"https://api-inference.huggingface.co/models/{st.secrets['HF_MODEL']}"
+
+        headers = {
+            "Authorization": f"Bearer {st.secrets['HF_API_KEY']}",
+            "Content-Type": "application/json"
+        }
 
         prompt = f"""
-You are a helpful, friendly AI assistant.
+You are a helpful AI assistant.
 Answer clearly and simply.
 
-
-Instructions:
-- Answer like ChatGPT in simple, clear words
-- Explain in short paragraphs
+Rules:
+- Use simple, clear words
+- Short paragraphs
 - Do NOT mention Jira, tickets, IDs, sections, or documents
-- Use the given context only to understand the issue
-- If information is unclear, explain it in a general way
+- Use the context only as background
+- If information is unclear, answer generally
 
-Context (background only):
+Context:
 {context}
 
-User Question:
+Question:
 {question}
 
 Answer:
 """.strip()
 
         payload = {
-            "model": "smollm2:360m",
-            "prompt": prompt,
-            "stream": False
+            "inputs": prompt,
+            "parameters": {
+                "max_new_tokens": 300,
+                "temperature": 0.3,
+                "return_full_text": False
+            }
         }
 
         response = requests.post(
-            OLLAMA_URL,
+            url,
+            headers=headers,
             json=payload,
-            timeout=120
+            timeout=60
         )
 
         response.raise_for_status()
+        result = response.json()
 
-        return response.json().get("response", "").strip()
+        # HF API response handling
+        if isinstance(result, list) and "generated_text" in result[0]:
+            return result[0]["generated_text"].strip()
 
-    except Exception:
+        return "⚠️ Unable to generate response at the moment."
+
+    except Exception as e:
         return (
-            "⚠️ The AI engine is starting or temporarily unavailable.\n\n"
-            "Please try again in a few seconds."
+            "⚠️ AI service temporarily unavailable.\n\n"
+            "Please try again after some time."
         )
