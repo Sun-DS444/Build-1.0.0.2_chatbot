@@ -109,10 +109,11 @@ def show_searching_overlay():
     </style>
 
     <div class="overlay">
-        <img class="loader" src="data:image/png;base64,{LOADER_IMG}" />
+        <div style="color:white;font-size:24px;">Loading...</div>
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
+
 
 
 
