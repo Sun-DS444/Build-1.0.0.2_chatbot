@@ -13,7 +13,7 @@ def load_image_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
-LOADER_IMG = load_image_base64("assets/infinity_loader.png")
+LOADER_IMG = ""
 
 
 # ---------- HEADER -----------------
@@ -113,5 +113,6 @@ def show_searching_overlay():
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
+
 
 
