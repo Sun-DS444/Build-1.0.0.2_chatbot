@@ -36,8 +36,7 @@ def load_model():
 model = load_model()
 
 # ---------------- SIDEBAR INFO ----------------
-total = get_total_ticket_count()
-st.sidebar.metric("Total Jira Tickets", total)
+st.sidebar.metric("Total Jira Tickets", "N/A")
 
 # ---------------- SIDEBAR UPLOAD ----------------
 uploaded_file = upload_sidebar()
@@ -77,3 +76,4 @@ if send and query:
     # 4️⃣ Show final answer (ChatGPT-style)
     st.subheader("Answer")
     st.write(answer)
+
