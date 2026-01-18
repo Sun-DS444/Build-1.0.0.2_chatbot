@@ -1,11 +1,7 @@
 import streamlit as st
 from sentence_transformers import SentenceTransformer
 from data_loader import process_uploaded_file
-from search_engine import (
-    hybrid_search,
-    get_connection,
-    get_total_ticket_count,
-    build_context
+from search_engine import hybrid_search, build_context
 )
 from llm_client import call_llm
 from ui_portal import (
@@ -68,5 +64,6 @@ if send and query:
     # 4️⃣ Show final answer (ChatGPT-style)
     st.subheader("Answer")
     st.write(answer)
+
 
 
