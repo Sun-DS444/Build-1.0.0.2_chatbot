@@ -143,13 +143,7 @@ def hybrid_search(query, model, conn, top_k=10):
 
 # ---------------- COUNT ----------------
 def get_total_ticket_count():
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM jira_tickets;")
-    count = cur.fetchone()[0]
-    cur.close()
-    conn.close()
-    return count
+    return 0
 # ---Add context builder and it is also brudge to LLM because its clean data and take only 5 to 10 chunks
 def build_context(results, max_chunks=3):
     priority = {
@@ -189,4 +183,5 @@ Content:
             break
 
     return "\n\n---\n\n".join(context_blocks)
+
 
