@@ -6,8 +6,12 @@ import numpy as np
 import psycopg2
 import traceback
 import streamlit as st
+import pandas as pd
+import uuid
+from qdrant_store import get_client
 from docx import Document
 from psycopg2.extras import execute_values
+
 
 # ---------------- DOCX READER ----------------
 def read_docx(uploaded_file):
@@ -104,8 +108,47 @@ DB_COLUMNS = [
 # ---------------- PROCESS FILE ----------------
 def process_uploaded_file(uploaded_file, model):
     try:
-        import pandas as pd
-        import streamlit as st
+        filename = uploaded_file.name.lower()
+
+        if filename.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
+        elif filename.endswith(".xlsx") or filename.endswith(".xls"):
+            df = pd.read_excel(uploaded_file)
+        elif filename.endswith(".docx"):
+            from docx import Document
+            doc = Document(uploaded_file)
+            text = "\n".join(p.text for p in doc.paragraphs)
+            df = pd.DataFrame([{"text": text}])
+        else:
+            st.error("Unsupported file")
+            return False
+
+        client = get_client()
+        points = []
+
+        for _, row in df.iterrows():
+            text = str(row.get("text") or row.get("description") or "")
+            if not text.strip():
+                continue
+
+            vec = model.encode(text).tolist()
+            points.append({
+                "id": str(uuid.uuid4()),
+                "vector": vec,
+                "payload": {"text": text}
+            })
+
+        client.upsert(
+            collection_name="jira_docs",
+            points=points
+        )
+
+        st.success(f"Uploaded {len(points)} records")
+        return True
+
+    except Exception as e:
+        st.error(str(e))
+        return False
 
         # ---------- Read file ----------
         filename = uploaded_file.name.lower()
@@ -231,3 +274,4 @@ def process_uploaded_file(uploaded_file, model):
         st.text(traceback.format_exc())
 
         return False
+
