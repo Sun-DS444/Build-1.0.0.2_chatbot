@@ -104,7 +104,10 @@ DB_COLUMNS = [
 # ---------------- PROCESS FILE ----------------
 def process_uploaded_file(uploaded_file, model):
     try:
-        # -------- Read File (SAFE ROUTING) --------
+        import pandas as pd
+        import streamlit as st
+
+        # ---------- Read file ----------
         filename = uploaded_file.name.lower()
 
         if filename.endswith(".csv"):
@@ -114,23 +117,48 @@ def process_uploaded_file(uploaded_file, model):
             df = pd.read_excel(uploaded_file)
 
         elif filename.endswith(".docx"):
-         text = read_docx(uploaded_file)
+            text = read_docx(uploaded_file)
+            df = pd.DataFrame([{
+                "issue_key": "DOC_" + uploaded_file.name.upper(),
+                "title": uploaded_file.name,
+                "description": text,
+                "status": "DOCUMENT"
+            }])
 
-        doc_key = (
-            "DOC_" +
-            uploaded_file.name
-            .replace(".docx", "")
-            .replace(" ", "_")
-            .upper()
-        )
+        else:
+            st.error("Unsupported file type")
+            return False
 
-        df = pd.DataFrame([{
-            "issue_key": doc_key,        #  REQUIRED
-            "title": uploaded_file.name,
-            "description": text,
-            "status": "DOCUMENT"         # optional but useful
-        }])
+        # ---------- Basic validation ----------
+        if df.empty:
+            st.warning("Uploaded file is empty")
+            return False
 
+        # ---------- Generate embeddings (in memory only) ----------
+        records = []
+
+        for _, row in df.iterrows():
+            content = str(row.get("description", "") or "")
+            if not content.strip():
+                continue
+
+            embedding = model.encode(content).tolist()
+
+            records.append({
+                "title": row.get("title", ""),
+                "text": content,
+                "embedding": embedding
+            })
+
+        # ---------- Store in session (NO DB) ----------
+        st.session_state["uploaded_records"] = records
+
+        st.success(f"Uploaded {len(records)} records (DB disabled)")
+        return True
+
+    except Exception as e:
+        st.error(f"Upload failed: {e}")
+        return False
 
         # -------- Normalize Columns --------
         df.columns = df.columns.str.strip()
@@ -201,4 +229,5 @@ def process_uploaded_file(uploaded_file, model):
     except Exception as e:
         st.error(f"Upload error: {e}")
         st.text(traceback.format_exc())
+
         return False
